@@ -22,6 +22,7 @@
                     <th>Language</th>
                     <th>CPI</th>
                     <th>Tips</th>
+                    <th>Start Survey</th>
                 </tr>
             </thead>
             <tbody></tbody>
@@ -60,6 +61,7 @@ async function loadSurveys() {
                 <td>${survey.Survey_Language || ""}</td>
                 <td>${survey.CPI || ""}</td>
                 <td>${survey.Survey_Tips ? survey.Survey_Tips.replace(/<[^>]+>/g,'') : ""}</td>
+                <td>${survey.link ? `<a href="${survey.link}" target="_blank" class="btn btn-success btn-sm">Start Survey</a>` : 'N/A'}</td>
             `;
             tableBody.appendChild(row);
         });
@@ -70,13 +72,14 @@ async function loadSurveys() {
             ordering: true,
             order: [[0,'asc']],
             columnDefs: [
-                { orderable: false, targets: 7 }
+                { orderable: false, targets: 7 },
+                { orderable: false, targets: 8 }
             ]
         });
 
     } else {
         const row = document.createElement("tr");
-        row.innerHTML = `<td colspan="8" class="text-danger">${result.message}</td>`;
+        row.innerHTML = `<td colspan="9" class="text-danger">${result.message}</td>`;
         tableBody.appendChild(row);
     }
 }
