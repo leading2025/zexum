@@ -51,6 +51,10 @@ async function loadSurveys() {
         const surveys = result.data?.data?.data || [];
 
         surveys.forEach(survey => {
+            // Clean backslashes
+            let surveyLink = survey.link ? survey.link.replace(/\\/g, '') : '';
+            let hasValidUID = surveyLink.includes('uid=') && surveyLink.split('uid=')[1].trim() !== '';
+
             const row = document.createElement("tr");
             row.innerHTML = `
                 <td>${survey.Survey_Country || ""}</td>
@@ -61,7 +65,12 @@ async function loadSurveys() {
                 <td>${survey.Survey_Language || ""}</td>
                 <td>${survey.CPI || ""}</td>
                 <td>${survey.Survey_Tips ? survey.Survey_Tips.replace(/<[^>]+>/g,'') : ""}</td>
-                <td>${survey.link ? `<a href="${survey.link}" target="_blank" class="btn btn-success btn-sm">Start Survey</a>` : 'N/A'}</td>
+                <td>
+                  ${hasValidUID 
+                      ? `<a href="${surveyLink}" target="_blank" class="btn btn-success btn-sm">Start Survey</a>` 
+                      : `<button class="btn btn-secondary btn-sm" disabled>Login to Start</button>`
+                  }
+                </td>
             `;
             tableBody.appendChild(row);
         });
