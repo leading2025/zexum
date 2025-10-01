@@ -51,9 +51,8 @@ async function loadSurveys() {
         const surveys = result.data?.data?.data || [];
 
         surveys.forEach(survey => {
-            // Clean backslashes
+            // Clean backslashes in survey link
             let surveyLink = survey.link ? survey.link.replace(/\\/g, '') : '';
-            let hasValidUID = surveyLink.includes('uid=') && surveyLink.split('uid=')[1].trim() !== '';
 
             const row = document.createElement("tr");
             row.innerHTML = `
@@ -66,10 +65,7 @@ async function loadSurveys() {
                 <td>${survey.CPI || ""}</td>
                 <td>${survey.Survey_Tips ? survey.Survey_Tips.replace(/<[^>]+>/g,'') : ""}</td>
                 <td>
-                  ${hasValidUID 
-                      ? `<a href="${surveyLink}" target="_blank" class="btn btn-success btn-sm">Start Survey</a>` 
-                      : `<button class="btn btn-secondary btn-sm" disabled>Login to Start</button>`
-                  }
+                  ${surveyLink ? `<a href="${surveyLink}" target="_blank" class="btn btn-success btn-sm">Start Survey</a>` : 'N/A'}
                 </td>
             `;
             tableBody.appendChild(row);
