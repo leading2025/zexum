@@ -16,14 +16,13 @@ def fetch_zexum_survey():
 
     API_URL = "https://api.zexumglobalresearch.net/api/getsurvey"
     MAX_RETRIES = 2        # 2 retries = 3 total attempts
-    RETRY_DELAY_SEC = 1    # 1 second backoff
-    TIMEOUT_SEC = 190      # match client original
+    RETRY_DELAY_SEC = 1
+    TIMEOUT_SEC = 190      # match original client
 
-    # Retry strategy
     retry_strategy = Retry(
         total=MAX_RETRIES,
         backoff_factor=RETRY_DELAY_SEC,
-        status_forcelist=[429, 500, 502, 503, 504],
+        status_forcelist=[429,500,502,503,504],
         allowed_methods=["GET"]
     )
     adapter = HTTPAdapter(max_retries=retry_strategy)
@@ -43,31 +42,39 @@ def fetch_zexum_survey():
 
 def process_survey_data(raw_data):
     """
-    Extract UID, remove duplicates, keep only valid survey links.
+    Safely extract UID, remove duplicates, keep only valid survey links.
     """
     surveys = raw_data.get('data', {}).get('data', [])
     processed = []
     seen_uids = set()
 
     for s in surveys:
-        link = s.get('link', '').replace('\\', '')
+        link = s.get('link', '')
+        if not link:
+            continue  # skip empty links
+
+        link = link.replace('\\', '')
         uid = None
+
         if 'uid=' in link:
-            uid = link.split('uid=')[1].split('&')[0].strip()
-        
+            try:
+                uid = link.split('uid=')[1].split('&')[0].strip()
+            except IndexError:
+                uid = None
+
         if uid and uid not in seen_uids:
             seen_uids.add(uid)
             s['uid'] = uid
             s['link'] = link
             processed.append(s)
-    
+
     return processed
 
 @app.route("/get-zexum-survey")
 def get_zexum_survey_route():
     try:
         survey_data = fetch_zexum_survey()
-        survey_data['data']['data'] = process_survey_data(survey_data)
+        survey_data['data'] = {'data': process_survey_data(survey_data)}
         return {"status":"success","data":survey_data}, 200
     except Exception as e:
         return {"status":"error","message":str(e)}, 500
@@ -79,6 +86,15 @@ def view_surveys():
 @app.route("/")
 def home():
     return render_template("survey.html")
+
+# Optional debug route to inspect raw API response
+@app.route("/debug-survey")
+def debug_survey():
+    try:
+        survey_data = fetch_zexum_survey()
+        return jsonify(survey_data)
+    except Exception as e:
+        return {"status":"error","message":str(e)}, 500
 
 if __name__=="__main__":
     app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
