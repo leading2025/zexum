@@ -37,52 +37,64 @@
 let surveyDataTable;
 
 async function loadSurveys() {
-    try {
-        const response = await fetch('/get-zexum-survey');
-        const result = await response.json();
+    const response = await fetch('/get-zexum-survey');
+    const result = await response.json();
 
-        const tableBody = document.querySelector("#surveyTable tbody");
-        tableBody.innerHTML = "";
+    const tableBody = document.querySelector("#surveyTable tbody");
+    tableBody.innerHTML = "";
 
-        if(surveyDataTable) surveyDataTable.destroy();
+    if(surveyDataTable) {
+        surveyDataTable.destroy();
+    }
 
-        if(result.status === "success"){
-            const surveys = result.data?.data?.data || [];
+    if(result.status === "success"){
+        const surveys = result.data?.data?.data || [];
 
-            surveys.forEach(survey => {
-                const startBtn = survey.uid
-                    ? `<a href="${survey.link}" target="_blank" class="btn btn-success btn-sm">Start Survey</a>`
-                    : `<button class="btn btn-secondary btn-sm" disabled>Login to Start</button>`;
+        surveys.forEach(survey => {
+            // Clean backslashes in survey link
+            let surveyLink = survey.link ? survey.link.replace(/\\/g, '') : '';
 
-                const row = document.createElement("tr");
-                row.innerHTML = `
-                    <td>${survey.Country || ""}</td>
-                    <td>${survey.Target_Audience || ""}</td>
-                    <td>${survey.LOI || ""}</td>
-                    <td>${survey.IR || ""}</td>
-                    <td>${survey.Quota || ""}</td>
-                    <td>${survey.Language || ""}</td>
-                    <td>${survey.CPI || ""}</td>
-                    <td>${survey.Survey_Tips ? survey.Survey_Tips.replace(/<[^>]+>/g,'') : ""}</td>
-                    <td>${startBtn}</td>
-                `;
-                tableBody.appendChild(row);
-            });
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td>${survey.Survey_Country || ""}</td>
+                <td>${survey.Device_Type || ""}</td>
+                <td>${survey.Survey_LOI || ""}</td>
+                <td>${survey.Survey_IR || ""}</td>
+                <td>${survey.Quota || ""}</td>
+                <td>${survey.Survey_Language || ""}</td>
+                <td>${survey.CPI || ""}</td>
+                <td>${survey.Survey_Tips ? survey.Survey_Tips.replace(/<[^>]+>/g,'') : ""}</td>
+                <td>
+                  ${surveyLink ? `<a href="${surveyLink}" target="_blank" class="btn btn-success btn-sm">Start Survey</a>` : 'N/A'}
+                </td>
+            `;
+            tableBody.appendChild(row);
+        });
 
-            surveyDataTable = $('#surveyTable').DataTable();
-        } else {
-            alert("Error: " + result.message);
-        }
-    } catch(err) {
-        console.error(err);
-        alert("Failed to load survey data.");
+        surveyDataTable = $('#surveyTable').DataTable({
+            pageLength: 10,
+            lengthMenu: [5,10,20,50],
+            ordering: true,
+            order: [[0,'asc']],
+            columnDefs: [
+                { orderable: false, targets: 7 },
+                { orderable: false, targets: 8 }
+            ]
+        });
+
+    } else {
+        const row = document.createElement("tr");
+        row.innerHTML = `<td colspan="9" class="text-danger">${result.message}</td>`;
+        tableBody.appendChild(row);
     }
 }
 
-document.getElementById('refreshBtn').addEventListener('click', loadSurveys);
-
-// Initial load
-loadSurveys();
+$(document).ready(function(){
+    loadSurveys();
+    $('#refreshBtn').click(function(){
+        loadSurveys();
+    });
+});
 </script>
 </body>
 </html>
